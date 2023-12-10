@@ -1,0 +1,30 @@
+from pytoniq import WalletV4R2, Address, begin_cell
+from pytoniq.liteclient.balancer import LiteBalancer
+import asyncio
+
+
+mnemonics = []
+
+async def main():
+    provider = LiteBalancer.from_mainnet_config(1)
+    await provider.start_up()
+    wallet = await WalletV4R2.from_mnemonic(provider=provider, mnemonics=mnemonics)
+
+    body = begin_cell().store_uint(0, 32).store_snake_string('data:application/json,{"p":"ton-20","op":"mint","tick":"nano","amt":"100000000000"}').end_cell()
+
+    while True:
+        try:
+
+            msg = wallet.create_wallet_internal_message(destination=Address('EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c'), value=0,
+                                                        body=body,
+                                                        send_mode=1)
+
+            result = await wallet.raw_transfer(msgs=[msg, msg, msg, msg])
+            print(result)
+            await asyncio.sleep(10)
+        except Exception as e:
+            print(e)
+            await provider.close_all()
+            await provider.start_up()
+
+asyncio.run(main())
